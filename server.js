@@ -24,6 +24,14 @@ function isImageFile(filename) {
 // Utility function to scan directory for images
 async function scanImagesDirectory(folderPath) {
     try {
+        // Create directory if it doesn't exist
+        try {
+            await fs.access(folderPath);
+        } catch (error) {
+            console.log(`Creating directory: ${folderPath}`);
+            await fs.mkdir(folderPath, { recursive: true });
+        }
+        
         const files = await fs.readdir(folderPath);
         const imageFiles = files.filter(isImageFile);
         
@@ -47,17 +55,6 @@ app.get('/api/images', async (req, res) => {
     try {
         console.log(`Scanning folder: ${IMAGES_FOLDER}`);
         
-        // Check if folder exists
-        try {
-            await fs.access(IMAGES_FOLDER);
-        } catch (error) {
-            return res.status(404).json({
-                error: 'Images folder not found',
-                folder: IMAGES_FOLDER,
-                message: 'Make sure to upload images to the specified folder'
-            });
-        }
-        
         const imageFiles = await scanImagesDirectory(IMAGES_FOLDER);
         
         console.log(`Found ${imageFiles.length} images:`, imageFiles);
@@ -73,7 +70,8 @@ app.get('/api/images', async (req, res) => {
         console.error('API Error:', error);
         res.status(500).json({
             error: 'Failed to scan images',
-            message: error.message
+            message: error.message,
+            folder: IMAGES_FOLDER
         });
     }
 });
